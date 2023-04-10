@@ -2,20 +2,51 @@ import React, { useEffect, useState } from 'react';
 import './shop.css';
 import Product from '../product/Product/Product';
 import Cart from '../Cart/Cart';
+import { addToDb, getStoreCart } from '../../utilities/fakedb';
 
 const Shop = () => {
     const [products,setProducts] = useState([]);
     const [cart,setCart] = useState([]);
     useEffect(()=>{
+        // console.log('product load before fetch');
         fetch('products.json')
         .then(res => res.json())
         .then(data => setProducts(data))
     },[]);
-    const handleAddToCart = (product)=>{
-        console.log(product);
-       const newCart =   [...cart,product];
+    const handleAddToCart = (selectProduct)=>{
+       let newCart = [];
+       const exists = cart.find(product => product.id === selectProduct.id);
+       if (!exists) {
+              selectProduct.quantity = 1;
+              newCart =  [...cart,selectProduct];
+       } else {
+             const rest = cart.filter(product => product.id !== selectProduct.id );
+             exists.quantity = exists.quantity + 1;
+             newCart =  [...rest,exists];
+       }
+       
        setCart(newCart);
+       addToDb(selectProduct.id);
     };
+     useEffect(()=>{
+        // console.log('Localstorage first line',products)
+
+        const storeCart = getStoreCart();
+        //   console.log(storeCart);
+          const saveCart = [];
+          for (const id in storeCart) {
+               const addProduct = products.find( product => product.id === id );
+                if(addProduct){
+                    const quantity = storeCart[id];
+                    addProduct.quantity = quantity;
+                    saveCart.push(addProduct);
+
+                }
+            
+          }
+          setCart(saveCart)
+        //   console.log('local storage finished')
+    },[products]);
     return (
         <div className='shop-container'>
             <div className="products-container">
